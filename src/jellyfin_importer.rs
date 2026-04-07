@@ -43,8 +43,6 @@ impl JellyfinImporter {
         let file = File::open(input_path)?;
         let decoder = zstd::stream::read::Decoder::new(file)?;
         let mut archive = Archive::new(decoder);
-
-        println!("📂 Restoring files from {}...", input_path.display());
         archive.unpack("/")?;
 
         Ok(())

@@ -108,12 +108,10 @@ impl JellyfinExporter {
         }
     }
 
-    pub fn export(&self, output_path: &Path) -> io::Result<()> {
-        let file = File::create(output_path)?;
+    pub fn export(&self, export_path: &Path) -> io::Result<()> {
+        let file = File::create(export_path)?;
         let encoder = zstd::stream::Encoder::new(file, 3)?;
         let mut tar = Builder::new(encoder);
-
-        println!("📦 Archiving files...");
 
         for path in self.databases.iter().chain(self.configs.iter()) {
             if path.exists() {

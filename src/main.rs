@@ -1,11 +1,13 @@
 pub mod jellyfin_exporter;
 pub mod jellyfin_importer;
+pub mod utils;
 
 use chrono::Local;
 use clap::{Parser, Subcommand};
 use jellyfin_exporter::JellyfinExporter;
 use jellyfin_importer::JellyfinImporter;
 use std::path::PathBuf;
+use utils::pb_with_text;
 
 #[derive(Parser)]
 #[command(
@@ -38,33 +40,39 @@ fn main() {
 
     match cli.command {
         Commands::Export { output } => {
-            let mut final_output = if let Some(path) = output {
+            let mut export_path = if let Some(path) = output {
                 path
             } else {
+                // If user didn't input file name, generate one based on current datetime
                 let now = Local::now();
                 let timestamp = now.format("%Y-%m-%d_%H-%M-%S").to_string();
                 PathBuf::from(format!("export_{timestamp}.jexport"))
             };
 
-            if final_output.extension().and_then(|s| s.to_str()) != Some("jexport") {
-                final_output.set_extension("jexport");
+            // Add ext if not present
+            if export_path.extension().and_then(|s| s.to_str()) != Some("jexport") {
+                export_path.set_extension("jexport");
             }
 
             let mut exporter = JellyfinExporter::new();
-            println!("🔍 Scanning system for Jellyfin files...");
+            let pb = pb_with_text("🔍 Scanning system for Jellyfin files...");
             exporter.scan();
 
-            println!(
+            pb.finish_with_message(format!(
                 "✅ Scan complete: {} databases and {} config files found.",
                 exporter.databases.len(),
                 exporter.configs.len()
-            );
+            ));
 
-            if let Err(e) = exporter.export(&final_output) {
-                eprintln!("❌ Export failed: {e}");
+            let pb = pb_with_text("📦 Archiving files...");
+            if let Err(e) = exporter.export(&export_path) {
+                pb.finish_with_message(format!("❌ Export failed: {e}"));
                 std::process::exit(1);
             }
-            println!("🎉 Successfully exported to: {}", final_output.display());
+            pb.finish_with_message(format!(
+                "🎉 Successfully exported to: {}",
+                export_path.display()
+            ));
         }
 
         Commands::Import { input } => {
@@ -73,11 +81,12 @@ fn main() {
                 std::process::exit(1);
             }
 
+            let pb = pb_with_text(format!("📂 Restoring files from {}...", input.display()));
             if let Err(e) = JellyfinImporter::import(&input) {
-                eprintln!("❌ Import blocked: {e}");
+                pb.finish_with_message(format!("❌ Import blocked: {e}"));
                 std::process::exit(1);
             }
-            println!("✅ Restoration completed successfully.");
+            pb.finish_with_message("✅ Restoration completed successfully.");
         }
     }
 }
