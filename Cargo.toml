@@ -1,0 +1,15 @@
+[package]
+autor = "ValentinGrim"
+description = "A jellyfin configuration manager"
+name = "jellyconfig"
+license = "MIT OR Apache-2.0"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4"
+clap = { version = "4.6", features = ["derive"] }
+nix = { version = "0.31", features = ["user"] }
+procfs = "0.18.0"
+tar = "0.4"
+zstd = "0.13"
