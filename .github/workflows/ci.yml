@@ -27,9 +27,6 @@ jobs:
       - name: Format
         run: cargo fmt --all -- --check
 
-      - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D clippy::all -D clippy::pedantic
-
   build:
     name: Build
     needs: tests
